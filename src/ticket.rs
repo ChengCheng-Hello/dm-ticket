@@ -39,6 +39,7 @@ impl DmTicket {
             .collect::<Vec<&str>>()
             .join(";");
 
+
         let client = DmClient::new(cookie).await?;
 
         Ok(Self { client, account })
@@ -350,107 +351,107 @@ impl DmTicket {
             }
         };
 
-        let ticket_name = ticket_info
-            .detail_view_component_map
-            .item
-            .static_data
-            .item_base
-            .item_name;
+        // let ticket_name = ticket_info
+        //     .detail_view_component_map
+        //     .item
+        //     .static_data
+        //     .item_base
+        //     .item_name;
 
-        let perform_id = ticket_info
-            .detail_view_component_map
-            .item
-            .item
-            .perform_bases[perfomr_idx]
-            .performs[0]
-            .perform_id
-            .clone();
+        // let perform_id = ticket_info
+        //     .detail_view_component_map
+        //     .item
+        //     .item
+        //     .perform_bases[perfomr_idx]
+        //     .performs[0]
+        //     .perform_id
+        //     .clone();
 
-        let perform_name = ticket_info
-            .detail_view_component_map
-            .item
-            .item
-            .perform_bases[perfomr_idx]
-            .performs[0]
-            .perform_name
-            .clone();
+        // let perform_name = ticket_info
+        //     .detail_view_component_map
+        //     .item
+        //     .item
+        //     .perform_bases[perfomr_idx]
+        //     .performs[0]
+        //     .perform_name
+        //     .clone();
 
-        info!("正在获取场次/票档信息...");
-        let perform_info = self.get_perform_info(&ticket_id, &perform_id).await?;
-        let sku_id = perform_info.perform.sku_list[sku_idx].sku_id.clone();
-        let sku_name = perform_info.perform.sku_list[sku_idx].price_name.clone();
-        let item_id = perform_info.perform.sku_list[sku_idx].item_id.clone();
+        // info!("正在获取场次/票档信息...");
+        // let perform_info = self.get_perform_info(&ticket_id, &perform_id).await?;
+        // let sku_id = perform_info.perform.sku_list[sku_idx].sku_id.clone();
+        // let sku_name = perform_info.perform.sku_list[sku_idx].price_name.clone();
+        // let item_id = perform_info.perform.sku_list[sku_idx].item_id.clone();
 
-        let start_time_str = ticket_info
-            .detail_view_component_map
-            .item
-            .item
-            .sell_start_time_str;
+        // let start_time_str = ticket_info
+        //     .detail_view_component_map
+        //     .item
+        //     .item
+        //     .sell_start_time_str;
 
-        let mut start_timestamp = ticket_info
-            .detail_view_component_map
-            .item
-            .item
-            .sell_start_timestamp
-            .parse::<i64>()?;
+        // let mut start_timestamp = ticket_info
+        //     .detail_view_component_map
+        //     .item
+        //     .item
+        //     .sell_start_timestamp
+        //     .parse::<i64>()?;
 
-        let request_time = self.account.request_time;
+        // let request_time = self.account.request_time;
 
-        if request_time > 0 {
-            start_timestamp = request_time
-        }
+        // if request_time > 0 {
+        //     start_timestamp = request_time
+        // }
 
-        println!(
-            "\r\n\t账号备注: {}\n\t账号昵称: {}\n\t门票名称: {}\n\t场次名称: {}\n\t票档名称: {}\n\t开售时间: {}\n",
-            self.account.remark, user_info.nickname, ticket_name, perform_name, sku_name, start_time_str
-        );
+        // println!(
+        //     "\r\n\t账号备注: {}\n\t账号昵称: {}\n\t门票名称: {}\n\t场次名称: {}\n\t票档名称: {}\n\t开售时间: {}\n",
+        //     self.account.remark, user_info.nickname, ticket_name, perform_name, sku_name, start_time_str
+        // );
 
-        let local: DateTime<Local> = Local::now();
-        let current_timestamp = local.timestamp_millis();
+        // let local: DateTime<Local> = Local::now();
+        // let current_timestamp = local.timestamp_millis();
 
-        match current_timestamp > start_timestamp {
-            true => {
-                if let Err(e) = self.buy_it_now(&item_id, &sku_id).await {
-                    if e.to_string()
-                        .contains(&DmApiError::ProductEpired.to_string())
-                    {
-                        let grace_period_millis =
-                            self.account.ticket.pick_up_leaks.grace_period_minutes * 60 * 1000;
-                        if (current_timestamp - start_timestamp) > grace_period_millis {
-                            return Ok(());
-                        }
-                        info!("商品已售空, 去捡漏...\n");
-                        return self.pick_up_leaks(ticket_id, perform_id).await;
-                    }
-                }
-            }
-            false => {
-                let res = self.wait_for_buy(start_timestamp, &item_id, &sku_id).await;
-                match res {
-                    Ok(is_succes) => {
-                        if is_succes {
-                            return Ok(());
-                        }
-                    }
-                    Err(e) => {
-                        if e.to_string().contains("退出") {
-                            return Ok(());
-                        }
-                    }
-                };
-                if priority_purchase_time > 0 {
-                    let start_timestamp = start_timestamp + priority_purchase_time * 60 * 1000;
-                    info!("优先购已结束, 等待正式开抢...\n\n");
-                    if let Ok(res) = self.wait_for_buy(start_timestamp, &item_id, &sku_id).await {
-                        if res {
-                            return Ok(());
-                        }
-                    }
-                }
-                info!("\t未能抢到票, 去捡漏...");
-                self.pick_up_leaks(ticket_id, perform_id).await?;
-            }
-        };
+        // match current_timestamp > start_timestamp {
+        //     true => {
+        //         if let Err(e) = self.buy_it_now(&item_id, &sku_id).await {
+        //             if e.to_string()
+        //                 .contains(&DmApiError::ProductEpired.to_string())
+        //             {
+        //                 let grace_period_millis =
+        //                     self.account.ticket.pick_up_leaks.grace_period_minutes * 60 * 1000;
+        //                 if (current_timestamp - start_timestamp) > grace_period_millis {
+        //                     return Ok(());
+        //                 }
+        //                 info!("商品已售空, 去捡漏...\n");
+        //                 return self.pick_up_leaks(ticket_id, perform_id).await;
+        //             }
+        //         }
+        //     }
+        //     false => {
+        //         let res = self.wait_for_buy(start_timestamp, &item_id, &sku_id).await;
+        //         match res {
+        //             Ok(is_succes) => {
+        //                 if is_succes {
+        //                     return Ok(());
+        //                 }
+        //             }
+        //             Err(e) => {
+        //                 if e.to_string().contains("退出") {
+        //                     return Ok(());
+        //                 }
+        //             }
+        //         };
+        //         if priority_purchase_time > 0 {
+        //             let start_timestamp = start_timestamp + priority_purchase_time * 60 * 1000;
+        //             info!("优先购已结束, 等待正式开抢...\n\n");
+        //             if let Ok(res) = self.wait_for_buy(start_timestamp, &item_id, &sku_id).await {
+        //                 if res {
+        //                     return Ok(());
+        //                 }
+        //             }
+        //         }
+        //         info!("\t未能抢到票, 去捡漏...");
+        //         self.pick_up_leaks(ticket_id, perform_id).await?;
+        //     }
+        // };
         Ok(())
     }
 

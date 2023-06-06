@@ -62,9 +62,9 @@ impl TokenClient {
     // Get bx ua.
     pub async fn get_bx_ua(&self) -> Result<String> {
         let start = Instant::now();
-        let bx_ua = self.get_value("bx_ua").await?;
-        debug!("获取bx_ua: {:?}, 花费时间:{:?}", bx_ua, start.elapsed());
-        Ok(bx_ua)
+        // let bx_ua = self.get_value("bx_ua").await?;
+        // debug!("获取bx_ua: {:?}, 花费时间:{:?}", bx_ua, start.elapsed());
+        Ok("".to_string())
     }
 
     // Get bx token.

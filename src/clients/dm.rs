@@ -16,6 +16,10 @@ pub struct DmClient {
     pub bx_token: String,
 }
 
+fn convert(headers: &HeaderMap<HeaderValue>) -> serde_json::Value {
+    format!("{:?}", headers).into()
+}
+
 // 获取token
 pub async fn get_token(cookie: &str) -> Result<DmToken> {
     let mut headers = HeaderMap::new();
@@ -57,7 +61,7 @@ impl DmClient {
     pub async fn new(cookie: String) -> Result<Self> {
         let token_client = TokenClient::new()?;
 
-        let bx_token = token_client.get_bx_token().await?;
+        let bx_token = "".to_string();
 
         let token = get_token(&cookie).await?;
 
