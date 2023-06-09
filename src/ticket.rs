@@ -39,7 +39,6 @@ impl DmTicket {
             .collect::<Vec<&str>>()
             .join(";");
 
-
         let client = DmClient::new(cookie).await?;
 
         Ok(Self { client, account })
@@ -136,19 +135,25 @@ impl DmTicket {
                         num = viewer_list.as_array().unwrap().len();
                     }
                     if self.account.ticket.real_names.is_empty() {
-                        info!("未配置实名观演人, 默认选择前{}位观演人...", self.account.ticket.num);
+                        info!(
+                            "未配置实名观演人, 默认选择前{}位观演人...",
+                            self.account.ticket.num
+                        );
                         for i in 0..num {
                             item["fields"]["viewerList"][i]["isUsed"] = true.into();
                         }
-                    }else{
-                        for i in 0..item["fields"]["viewerList"].as_array().unwrap_or(&Vec::new()).len() {
+                    } else {
+                        for i in 0..item["fields"]["viewerList"]
+                            .as_array()
+                            .unwrap_or(&Vec::new())
+                            .len()
+                        {
                             let idx = i + 1;
                             if self.account.ticket.real_names.contains(&idx) {
                                 item["fields"]["viewerList"][i]["isUsed"] = true.into();
                             }
                         }
                     }
-                    
                 }
                 order_data[key] = item;
             } else {
@@ -228,6 +233,8 @@ impl DmTicket {
         debug!("获取演出票档信息:{:?}, 花费时间:{:?}", res, start.elapsed());
 
         let perform_info: PerformInfo = serde_json::from_str(res.data["result"].as_str().unwrap())?;
+
+        // info!("获取演出票档信息:{:?}", res.data["result"].as_str().unwrap());
 
         Ok(perform_info)
     }
@@ -324,26 +331,27 @@ impl DmTicket {
 
     // 程序入口
     pub async fn run(&self) -> Result<()> {
-        info!("正在检查用户信息...");
-        let user_info = match self.get_user_info().await {
-            Ok(info) => info,
-            Err(e) => {
-                if e.to_string().contains("FAIL_SYS_SESSION_EXPIRED::Session") {
-                    error!("获取用户信息失败, cookie已过期, 请重新登陆!");
-                } else {
-                    error!("获取用户信息失败, 原因:{:?}", e);
-                }
+        // info!("正在检查用户信息...");
+        // let user_info = match self.get_user_info().await {
+        //     Ok(info) => info,
+        //     Err(e) => {
+        //         if e.to_string().contains("FAIL_SYS_SESSION_EXPIRED::Session") {
+        //             error!("获取用户信息失败, cookie已过期, 请重新登陆!");
+        //         } else {
+        //             error!("获取用户信息失败, 原因:{:?}", e);
+        //         }
 
-                return Ok(());
-            }
-        };
-        let ticket_id = self.account.ticket.id.clone();
+        //         return Ok(());
+        //     }
+        // };
+        let ticket_id_1 = self.account.ticket.id.clone();
+        let ticket_id_2 = self.account.ticket.id.clone();
         let perfomr_idx = self.account.ticket.sessions - 1; // 场次索引
         let sku_idx = self.account.ticket.grade - 1; // 票档索引
         let priority_purchase_time = self.account.ticket.priority_purchase_time;
 
         info!("正在获取演唱会信息...");
-        let ticket_info = match self.get_ticket_info(ticket_id.clone()).await {
+        let ticket_info = match self.get_ticket_info(ticket_id_1.clone()).await {
             Ok(info) => info,
             Err(e) => {
                 info!("获取演唱会信息失败, {:?}", e);
@@ -351,30 +359,48 @@ impl DmTicket {
             }
         };
 
-        // let ticket_name = ticket_info
-        //     .detail_view_component_map
-        //     .item
-        //     .static_data
-        //     .item_base
-        //     .item_name;
+        let ticket_name = ticket_info
+            .detail_view_component_map
+            .item
+            .static_data
+            .item_base
+            .item_name;
 
-        // let perform_id = ticket_info
-        //     .detail_view_component_map
-        //     .item
-        //     .item
-        //     .perform_bases[perfomr_idx]
-        //     .performs[0]
-        //     .perform_id
-        //     .clone();
+        let perform_id_1 = ticket_info
+            .detail_view_component_map
+            .item
+            .item
+            .perform_bases[0]
+            .performs[0]
+            .perform_id
+            .clone();
 
-        // let perform_name = ticket_info
-        //     .detail_view_component_map
-        //     .item
-        //     .item
-        //     .perform_bases[perfomr_idx]
-        //     .performs[0]
-        //     .perform_name
-        //     .clone();
+        let perform_name_1 = ticket_info
+            .detail_view_component_map
+            .item
+            .item
+            .perform_bases[0]
+            .performs[0]
+            .perform_name
+            .clone();
+
+        let perform_id_2 = ticket_info
+            .detail_view_component_map
+            .item
+            .item
+            .perform_bases[1]
+            .performs[0]
+            .perform_id
+            .clone();
+
+        let perform_name_2 = ticket_info
+            .detail_view_component_map
+            .item
+            .item
+            .perform_bases[1]
+            .performs[0]
+            .perform_name
+            .clone();
 
         // info!("正在获取场次/票档信息...");
         // let perform_info = self.get_perform_info(&ticket_id, &perform_id).await?;
@@ -452,6 +478,10 @@ impl DmTicket {
         //         self.pick_up_leaks(ticket_id, perform_id).await?;
         //     }
         // };
+        self.pick_up_leaks(ticket_id_1, perform_id_1);
+        // println!("\r\tpick_up_leaks:{}:{}\t", perform_name_1, perform_id_1);
+        // println!("\r\tpick_up_leaks:{}:{}\t", perform_name_2, perform_id_2);
+        self.pick_up_leaks(ticket_id_2, perform_id_2).await?;
         Ok(())
     }
 
@@ -513,8 +543,14 @@ impl DmTicket {
         }
 
         for i in 0..pick_up_leaks_times {
-            print!("\r\t第{}次查询库存, ", i + 1);
+            println!("\r\t第{}次查询库存, ", i + 1);
             if let Ok(perform_info) = self.get_perform_info(&ticket_id, &perform_id).await {
+                let local: DateTime<Local> = Local::now();
+                let millis = local.timestamp_millis();
+                let (hours, minutes, seconds) = self.ms_to_hms(millis);
+                // println!("\r\tperformName, {}, {}小时:{}分钟:{:.3}秒\t", perform_info.perform.perform_name, hours, minutes, seconds);
+                let _ = io::stdout().flush();
+
                 for idx in 0..perform_info.perform.sku_list.len() {
                     let sku = &perform_info.perform.sku_list[idx];
                     let grade_idx = idx + 1;
@@ -523,7 +559,7 @@ impl DmTicket {
                         && (pick_up_leaks_grades.is_empty()
                             || pick_up_leaks_grades.contains(&grade_idx))
                     {
-                        print!("有余票...");
+                        println!("有余票...");
                         info!("票档:{}, 有库存, 去购买...", sku.price_name);
                         if let Ok(res) = self
                             .multiple_buy_attempts(
